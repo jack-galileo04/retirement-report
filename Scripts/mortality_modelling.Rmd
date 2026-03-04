@@ -1,0 +1,200 @@
+---
+title: "mort_modelling_simple"
+output: html_document
+---
+
+```{r include=FALSE, warning = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(here)
+
+improve_data <- readxl::read_excel(here("Data/Raw Data/lifetable_data.xlsx"), sheet = "Improvement Factors 2020-22", skip = 2) |> 
+  janitor::clean_names() |> 
+  rename(male_25_year = x25_year_2, male_125_year = x125_year_3, female_25_year = x25_year_4, female_125_year = x125_year_5)
+
+male_lifetable <- readxl::read_excel(here("Data/Raw Data/lifetable_data.xlsx"), sheet = "ALT 2020-22 Males", skip = 1) |> 
+  janitor::clean_names()
+
+female_lifetable <- readxl::read_excel(here("Data/Raw Data/lifetable_data.xlsx"), sheet = "ALT 2020-22 Females", skip = 1) |> 
+  janitor::clean_names()
+```
+
+# Current Assumptions
+
+- Minimum age to retire at (50 years)
+- Maximum age of death (110 years)
+- These imply a 60 year forecast horizon
+- Each year, the horizon needs to be extended another year, if all other parameters stay constant
+
+# Upgrades
+
+- Can make mortality be based given survived to retirement age (rather than current age)
+
+
+```{r}
+# Improvement Rates for each age
+
+improve_rates <- improve_data |> 
+  select(age, male_125_year, female_125_year) |> 
+  mutate(male_125_year = (100 + male_125_year)/100, 
+         female_125_year = (100 + female_125_year)/100)
+```
+
+
+```{r}
+# Base Mortality Rates
+
+male_qx <- male_lifetable |> 
+  mutate(qx = qx) |> 
+  select(age, qx) |>
+  bind_rows(data.frame(age = 110, qx = 1))
+female_qx <- female_lifetable |> 
+  mutate(qx = qx) |> 
+  select(age, qx) |>
+  bind_rows(data.frame(age = 110, qx = 1))
+```
+
+
+```{r}
+# Forecasted Mortality Rates
+
+male_qx_forecast <- matrix(data = male_qx$qx, nrow = 111, ncol = 64, byrow = FALSE)
+rownames(male_qx_forecast) <- 0:110
+female_qx_forecast <- matrix(data = female_qx$qx, nrow = 111, ncol = 64, byrow = FALSE)
+rownames(female_qx_forecast) <- 0:110
+
+for(j in 2:ncol(male_qx_forecast)){
+  
+  male_qx_forecast[,j] <- male_qx_forecast[,j-1]*improve_rates$male_125_year
+  female_qx_forecast[,j] <- female_qx_forecast[,j-1]*improve_rates$female_125_year
+}
+
+male_mortality_df <- male_qx_forecast |> as_tibble() |> select(-(1:3))
+colnames(male_mortality_df) <- seq(floor_date(as_date("2026-01-01"), "month"),
+                                  floor_date(as_date("2086-01-01"), "month"),
+                                  by = "year")
+female_mortality_df <- female_qx_forecast |> as_tibble() |> select(-(1:3))
+colnames(female_mortality_df) <- seq(floor_date(as_date("2026-01-01"), "month"),
+                                  floor_date(as_date("2086-01-01"), "month"),
+                                  by = "year")
+
+write_csv(male_mortality_df, here("Data/Processed Data/male_mthly_mortality_forecast.csv"))
+write_csv(female_mortality_df, here("Data/Processed Data/female_mthly_mortality_forecast.csv"))
+```
+
+
+```{r}
+# Cumulative Survival Matrix
+
+male_survival_df <- 1 - male_mortality_df
+rownames(male_survival_df) <- 0:110
+
+male_cum_survival_df <- data.frame(matrix(NA, nrow = 61, ncol = 61))
+rownames(male_cum_survival_df) <- 50:110
+colnames(male_cum_survival_df) <- seq(floor_date(as_date("2026-01-01"), "month"),
+                                  floor_date(as_date("2086-01-01"), "month"),
+                                  by = "year")
+
+male_cum_survival_list <- as.list(rep(NA, 21))
+
+for(z in 1:21){
+  
+  male_cum_survival_list[[z]] <- male_cum_survival_df[, z:61]
+  male_cum_survival_list[[z]][,1] <- male_survival_df[50:110,z]
+  
+  for(j in 2:ncol(male_cum_survival_list[[z]] )){
+    for(i in 2:nrow(male_cum_survival_list[[z]] )){
+
+      if(i < j){
+        male_cum_survival_list[[z]][i,j] <- NA
+        
+      } else {
+        male_cum_survival_list[[z]][i,j] <- male_cum_survival_list[[z]][i-1,j-1] * male_survival_df[i+49,j]
+      } 
+      
+    }
+  }
+    
+}
+
+names(male_cum_survival_list) <- 2026:2046
+```
+
+
+```{r}
+# Cumulative Survival Matrix
+
+female_survival_df <- 1 - female_mortality_df
+rownames(female_survival_df) <- 0:110
+
+female_cum_survival_df <- data.frame(matrix(NA, nrow = 61, ncol = 61))
+rownames(female_cum_survival_df) <- 50:110
+colnames(female_cum_survival_df) <- seq(floor_date(as_date("2026-01-01"), "month"),
+                                  floor_date(as_date("2086-01-01"), "month"),
+                                  by = "year")
+
+female_cum_survival_list <- as.list(rep(NA, 21))
+
+for(z in 1:21){
+  
+  female_cum_survival_list[[z]] <- female_cum_survival_df[, z:61]
+  female_cum_survival_list[[z]][,1] <- female_survival_df[50:110,z]
+  
+  for(j in 2:ncol(female_cum_survival_list[[z]] )){
+    for(i in 2:nrow(female_cum_survival_list[[z]] )){
+
+      if(i < j){
+        female_cum_survival_list[[z]][i,j] <- NA
+        
+      } else {
+        female_cum_survival_list[[z]][i,j] <- female_cum_survival_list[[z]][i-1,j-1] * female_survival_df[i+49,j]
+      } 
+      
+    }
+  }
+    
+}
+
+names(female_cum_survival_list) <- 2026:2046
+```
+
+
+```{r}
+# Combining into tidy data-frame.
+# Involves wrangling matrix into tidy format, and creating combinations of starting age and retirement age.
+
+set.seed(123)
+
+simulations <- lapply(male_cum_survival_list, function(x) calculate_death_years(x, death_rand = runif(1))) |> 
+    bind_rows() |> 
+    mutate(sim_id = 1, sex = "male") |> 
+  bind_rows(
+    lapply(female_cum_survival_list, function(x) calculate_death_years(x, death_rand = runif(1))) |> 
+    bind_rows() |> 
+    mutate(sim_id = 1, sex = "female")
+  )
+
+for(i in 2:5000){
+  
+  death_rand = runif(1)
+  
+  m <- lapply(male_cum_survival_list, function(x) calculate_death_years(x, death_rand = death_rand)) |> 
+    bind_rows() |> 
+    mutate(sim_id = i, sex = "male")
+  
+  f <- lapply(female_cum_survival_list, function(x) calculate_death_years(x, death_rand = death_rand)) |> 
+    bind_rows() |> 
+    mutate(sim_id = i, sex = "female")
+  
+  simulations <- simulations |> 
+    bind_rows(m,f)
+  
+}
+
+write.csv(simulations, here("Data/Processed Data/simulations.csv"))
+```
+
+```{r}
+knitr::purl("mortality_modelling.Rmd", here("Scripts/mortality_modelling.R"))
+```
