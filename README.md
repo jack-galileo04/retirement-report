@@ -37,7 +37,7 @@ At a high-level, the Power BI report:
 2. Allows the user to personalise their desired terminal estate, expected yearly expenses, and retirement age
 3. Applies growth assumptions (investment returns, CPI, and mortality rates)
 4. Simulates accumulations
-5. Outputs projected retirement savings and insights: [Retirement Report](https://app.powerbi.com/view?r=eyJrIjoiNDgyMGQ5YzEtNWI4Mi00ZDhlLThiMGMtOWJkMzZlYTc3NzAyIiwidCI6IjNhYTEyYWIxLWQyNGEtNGI0Yy04YjI0LTk5ZWI3ODE2YzJjZSJ9&pageName=f4c125951603c0da0ae3)
+5. Outputs projected retirement savings and insights: [Retirement Report](https://app.powerbi.com/view?r=eyJrIjoiNDgyMGQ5YzEtNWI4Mi00ZDhlLThiMGMtOWJkMzZlYTc3NzAyIiwidCI6IjNhYTEyYWIxLWQyNGEtNGI0Yy04YjI0LTk5ZWI3ODE2YzJjZSJ9)
 
 ---
 
