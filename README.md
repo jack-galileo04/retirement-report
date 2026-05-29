@@ -5,7 +5,6 @@ This project aims to provide an interactive report that visualises the viability
 ---
 
 ## 🔍 Overview
-https://github.com/jack-galileo04/retirement-report/blob/main/README.md
 This project constructs an analytical report, employing:
 - Data Visualisation
 - Data Analysis
