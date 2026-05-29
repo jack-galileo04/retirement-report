@@ -1,10 +1,12 @@
 # Personalised Retirement Savings Report
 
-### Tools: Power BI, Power Query, DAX, R, Tidyverse, Mortality Modelling, Economic Modelling
-### Problem: Providing personalised insights for required retirement savings via an interactive Power BI report.
+This project aims to provide an interactive report that visualises the viability of users' retirement "nest egg" in Australia. It uses stochastic economic and demographic modelling in R to provide personalisation and scenario/distributional analysis in Power BI.
 
-## Overview:
-This project constructs an analytical report, employing
+---
+
+## 🔍 Overview
+
+This project constructs an analytical report, employing:
 - Data Visualisation
 - Data Analysis
 - Data Wrangling
@@ -12,23 +14,82 @@ This project constructs an analytical report, employing
 - Mortality Modelling
 - Economic Modelling
 
-## Data:
-Data is sourced from the Australian Government Actuaries (mortality), Rate Inflation (cpi), AustralianSuper (investment).
+The goal is to answer questions like:
+- How much do I need to retire comfortably?
+- How much can I withdraw/draw down each year?
+- What changes make the biggest impact?
+- What is the chance my savings deplete?
+- What will my terminal estate look like?
+
+---
+
+## ⚠️ Disclaimer:
+This project is not financial advice. Does not account for taxes, fees, or distinct policy changes.
+
+File sizes were too big to commit to this repository. simulations.csv, retirement_simulations.csv, and the .pbix file were too large. Hence, the data was trimmed, and the Power BI report file was removed.
+
+---
+
+## ⚙️ How It Works
+
+At a high-level, the Power BI report:
+1. Takes in financial and demographic inputs (gender, current age, investment portfolio)
+2. Allows the user to personalise their desired terminal estate, expected yearly expenses, and retirement age
+3. Applies growth assumptions (investment returns, CPI, and mortality rates)
+4. Simulates accumulations
+5. Outputs projected retirement savings and insights: [Retirement Report](https://app.powerbi.com/view?r=eyJrIjoiNDgyMGQ5YzEtNWI4Mi00ZDhlLThiMGMtOWJkMzZlYTc3NzAyIiwidCI6IjNhYTEyYWIxLWQyNGEtNGI0Yy04YjI0LTk5ZWI3ODE2YzJjZSJ9&pageName=f4c125951603c0da0ae3)
+
+---
+
+## 🧠 Modelling Approach (R)
+
+- The three different investment portfolios (conservative, balanced, growth) and CPI were modelled using ARIMA time series models.
+- Mortality rates were modelled using Australian Life Tables and average projected growth rates.
+- Mortality forecasts were wrangled into a tidy dataframe with all combinations of the demographic inputs.
+- The results were combined using 5000 iterations of Monte Carlo simulations, where each scenario used the mortality rates and forecasted financial data with random error.
+- The output of the simulations was 5000 iterations per input combination, with an accompanying lifetime, terminal discount factor, and per annum annuity factor for expenses.
+
+---
+
+## 🧠 Assumptions and limitations
+
+- Returns and CPI errors are assumed to be normally distributed
+- Inflation is modelled independently of investment returns
+- Expected expenses are to remain consistent
+- Assumes Australia-wide mortality rates apply to the user
+
+---
+
+## 📂 Project Structure
+.
+
+├── Data/
+
+│   ├── Raw Data/             # Raw data from sources
+
+│   └── Processed Data/         # Transformed and output data
+
+├── Scripts/                 # Scripts used for the project
+
+├── .gitignore
+
+├── Retirement Report.pbix                 # Not in repository due to file size.
+
+└── README.md
+
+---
+
+## 📌 Future Improvements:
+- Include a mortality insights page.
+- Improve data quality for investment returns and CPI.
+- Incorporate accumulation tax above 2M in super.
+- Incorporate more demographic data (state-based mortality, etc)
+- Improve modelling framework (not assuming independence)
+
+---
+
+## 🙌 Acknowledgements
+Data is sourced from the Australian Government Actuaries (mortality), Rate Inflation (cpi), and AustralianSuper (investment).
 https://aga.gov.au/publications/life-tables
 https://www.rateinflation.com/consumer-price-index/australia-historical-cpi/
 https://www.australiansuper.com/why-choose-us/our-performance?superType=Super&display=table
-
-## Repository Structure:
-/ data/ Raw Data/ 'AustralianSuper Rates'.xlsx cpi_data.xlsx lifetable_data.xslx / Processed Data/ dim_risk_profile.csv dim_sex.csv retirement_simulations.csv simulations.csv super_forecast.csv super_forecast_calc.csv     / Scripts/ helper_functions.R invest_modelling.R mortality_modelling.R retirement_data.R
-
-## Disclaimer:
-File sizes were to big to commit to this repository. simulations.csv, retirement_simulations.csv, and the .pbix file were too large. Hence, the data was trimmed, and the Power BI report file was removed.
-
-## Products:
-- Retirement Report: https://app.powerbi.com/view?r=eyJrIjoiNDgyMGQ5YzEtNWI4Mi00ZDhlLThiMGMtOWJkMzZlYTc3NzAyIiwidCI6IjNhYTEyYWIxLWQyNGEtNGI0Yy04YjI0LTk5ZWI3ODE2YzJjZSJ9&pageName=f4c125951603c0da0ae3
-
-## Future Improvements:
-- Include a mortality insights page.
-- Improve data quality for investment returns and cpi.
-- Incorporate accumulation tax above 2M in super.
-- Incorporate more demographic data (state based moretality, etc)
