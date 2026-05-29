@@ -5,7 +5,7 @@ This project aims to provide an interactive report that visualises the viability
 ---
 
 ## 🔍 Overview
-
+https://github.com/jack-galileo04/retirement-report/blob/main/README.md
 This project constructs an analytical report, employing:
 - Data Visualisation
 - Data Analysis
@@ -90,6 +90,9 @@ At a high-level, the Power BI report:
 
 ## 🙌 Acknowledgements
 Data is sourced from the Australian Government Actuaries (mortality), Rate Inflation (cpi), and AustralianSuper (investment).
+
 https://aga.gov.au/publications/life-tables
+
 https://www.rateinflation.com/consumer-price-index/australia-historical-cpi/
+
 https://www.australiansuper.com/why-choose-us/our-performance?superType=Super&display=table
