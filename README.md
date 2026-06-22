@@ -42,10 +42,11 @@ At a high-level, the Power BI report:
 
 ## 🧠 Modelling Approach (R)
 
-- The three different investment portfolios (conservative, balanced, growth) and CPI were modelled using ARIMA time series models.
+- The three different investment portfolios (conservative, balanced, growth) were modelled using a multivariate normal distribution on annualised log returns.
+- Annualised CPI was modelled using basic white noise, as other time series methods that handle the slight non-stationarity were at risk of overfitting to the small dataset size.
 - Mortality rates were modelled using Australian Life Tables and average projected growth rates.
 - Mortality forecasts were wrangled into a tidy dataframe with all combinations of the demographic inputs.
-- The results were combined using 5000 iterations of Monte Carlo simulations, where each scenario used the mortality rates and forecasted financial data with random error.
+- The results were combined using 5000 iterations of Monte Carlo simulations on the financial and demographic data.
 - The output of the simulations was 5000 iterations per input combination, with an accompanying lifetime, terminal discount factor, and per annum annuity factor for expenses.
 
 ---
@@ -79,11 +80,8 @@ At a high-level, the Power BI report:
 ---
 
 ## 📌 Future Improvements:
-- Include a mortality insights page.
-- Improve data quality for investment returns and CPI.
 - Incorporate accumulation tax above 2M in super.
 - Incorporate more demographic data (state-based mortality, etc)
-- Improve modelling framework (not assuming independence)
 
 ---
 
