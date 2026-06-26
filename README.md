@@ -25,7 +25,7 @@ The goal is to answer questions like:
 ## ⚠️ Disclaimer:
 This project is not financial advice. Does not account for taxes, fees, or distinct policy changes.
 
-File sizes were too big to commit to this repository. The pbix file used to build the report imports the data from a SQL Server Database, which has millions of rows.
+File sizes were too big to commit to this repository. The .pbix file used to build the report imports the data from a SQL Server Database, which has millions of rows.
 
 ---
 
@@ -81,6 +81,7 @@ At a high-level, the Power BI report:
 ## 📌 Future Improvements:
 - Incorporate accumulation tax above 2M in super.
 - Incorporate more demographic data (state-based mortality, etc)
+- Add in a percentile selector for retirement savings to filter the visualisations.
 
 ---
 
