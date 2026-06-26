@@ -40,7 +40,7 @@ At a high-level, the Power BI report:
 
 ---
 
-## 🧠 Modelling Approach (R)
+## 🧠 Modelling Approach (R & SQL)
 
 - The three different investment portfolios (conservative, balanced, growth) were modelled using a multivariate normal distribution on annualised log returns.
 - Annualised CPI was modelled using basic white noise, as other time series methods that handle the slight non-stationarity were at risk of overfitting to the small dataset size.
@@ -48,6 +48,7 @@ At a high-level, the Power BI report:
 - Mortality forecasts were wrangled into a tidy dataframe with all combinations of the demographic inputs.
 - The results were combined using 5000 iterations of Monte Carlo simulations on the financial and demographic data.
 - The output of the simulations was 5000 iterations per input combination, with an accompanying lifetime, terminal discount factor, and per annum annuity factor for expenses.
+- The outputs are then written to a database, where STAR schema is implemented using SQL.
 
 ---
 
