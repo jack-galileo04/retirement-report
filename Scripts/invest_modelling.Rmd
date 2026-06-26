@@ -1,0 +1,250 @@
+---
+title: "daily_invest_modelling"
+output: html_document
+---
+
+```{r include=FALSE, warning = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+source(here::here("Scripts/config.R"))
+source(here::here("Scripts/helper_functions.R"))
+
+cpi_data <- dbReadTable(
+  config$con, 
+  Id(schema = "raw", table = "cpi_data")
+  ) |> 
+  janitor::clean_names() |> 
+  dplyr::select(year, annual_cpi = annual) |> 
+  arrange(year) |> 
+  mutate(
+    annual_cpi = log(annual_cpi) - log(lag(annual_cpi))
+    ) |> 
+  filter(!is.na(annual_cpi)) |> 
+  arrange(year)
+
+super_daily <- dbReadTable(
+  config$con, 
+  Id(schema = "raw", table = "australiansuper_daily_rates")
+  ) |> 
+  janitor::clean_names() |> 
+  dplyr::select(rate_date, high_growth, balanced, conservative = conservative_balanced) |> 
+  replace_na(list(high_growth = 0)) |> 
+  mutate(
+    across(high_growth:conservative, ~ .x / 100),
+    rate_date = as_date(rate_date)
+    ) |> 
+  filter(!wday(rate_date) %in% c(1,7)) |>  #removes weekends
+  filter(!(high_growth == 0 & balanced == 0 & conservative == 0)) # accounts for christmas as well (not robust)
+```
+
+```{r}
+summary(super_daily)
+summary(cpi_data)
+```
+
+```{r}
+super_daily |> 
+  gather(-rate_date, key = "investment", value = "return") |> 
+  mutate(investment = factor(investment)) |> 
+  ggplot(aes(rate_date, return, colour = investment)) +
+  geom_line(alpha = 0.5) +
+  facet_wrap(~investment)
+```
+
+```{r}
+cpi_data |> 
+  ggplot(aes(year, annual_cpi)) +
+  geom_line()
+```
+
+```{r}
+# Hybrid approach
+# Use daily rates to capture volatility, use annual rates to capture annual means
+```
+
+```{r}
+# convert to log returns
+
+super_log_returns <- super_daily |> 
+  mutate(
+    across(high_growth:conservative,
+           ~ log(.x + 1))
+  )
+```
+
+
+```{r}
+# calculating historical standard deviation and annualising
+
+sigma_daily <- apply(super_log_returns[,-1], 2, sd)
+cov_daily <- cov(super_log_returns[,-1])
+
+# annualise
+
+sigma_annual <- sigma_daily * sqrt(252)
+cov_annual <- cov_daily * 252
+```
+
+```{r}
+# converting daily returns to annual, and calculating historical means
+
+annual_returns <- super_log_returns |> 
+  group_by(year = year(rate_date)) |> 
+  summarise(across(c(high_growth, balanced, conservative),
+                   ~ sum(.x))) |> 
+  filter(year > 2008)  # gfc for volatility but not for means
+
+mean_annual <- colMeans(annual_returns[,-1])
+```
+
+```{r}
+annual_returns |> 
+  gather(-year, key = "investment", value = "return") |> 
+  ggplot(aes(year, return, colour = investment)) +
+  geom_line(alpha = 0.5) +
+  facet_wrap(~investment)
+```
+
+```{r}
+annual_returns |> 
+  left_join(
+    cpi_data,
+    by = "year"
+  ) |> 
+  dplyr::select(-year) |> 
+  drop_na() |> 
+  cov()
+
+# small correlations, will omit due to limited data and model cpi separately to reduce overfitting
+```
+
+```{r}
+acf(cpi_data$annual_cpi)
+pacf(cpi_data$annual_cpi)
+
+cpi_fit_base <- arima(cpi_data$annual_cpi, order = c(0,0,0))
+cpi_fit_ar1 <- arima(cpi_data$annual_cpi, order = c(1,0,0))
+
+summary(cpi_fit_base)
+summary(cpi_fit_ar1)
+
+# ar1 model performs slightly better, but with the limited data, the difference in performance does not seem significant enough
+# the model can very easily capture noise and overfit, will opt for simpler model.
+```
+
+```{r}
+# model parameters for cpi
+
+cpi_mean <- mean(cpi_data$annual_cpi)
+cpi_sd <- sd(cpi_data$annual_cpi)
+```
+
+```{r}
+# forecasting
+
+cpi_annual_forecast <- matrix(data = NA, nrow = 5000, ncol = config$period_years+1)
+
+super_forecast <- list(
+  balanced = matrix(data = NA, nrow = 5000, ncol = config$period_years+1),
+  growth = matrix(data = NA, nrow = 5000, ncol = config$period_years+1),
+  conservative = matrix(data = NA, nrow = 5000, ncol = config$period_years+1)
+)
+
+cumulative_super_forecast <- list(
+  balanced = matrix(data = NA, nrow = 5000, ncol = config$period_years+1),
+  growth = matrix(data = NA, nrow = 5000, ncol = config$period_years+1),
+  conservative = matrix(data = NA, nrow = 5000, ncol = config$period_years+1)
+)
+
+set.seed(123)
+
+for(i in 1:config$sims) {
+  
+  log_super_sims <- mvrnorm(n = config$period_years+1, mu = mean_annual, Sigma = cov_annual)
+  super_sims <- exp(log_super_sims) - 1
+  
+  cpi_sims <- rnorm(n = config$period_years+1, mean = cpi_mean, sd = cpi_sd)
+  
+  real_returns <- (1 + super_sims) / (1 + cpi_sims) - 1
+  
+  super_forecast$balanced[i,] <- real_returns[,"balanced"]
+  super_forecast$growth[i,] <- real_returns[,"high_growth"]
+  super_forecast$conservative[i,] <- real_returns[,"conservative"]
+  
+  cumulative_super_forecast$balanced[i,] <- cumprod(super_forecast$balanced[i,] + 1)
+  cumulative_super_forecast$growth[i,] <- cumprod(super_forecast$growth[i,] + 1)
+  cumulative_super_forecast$conservative[i,] <- cumprod(super_forecast$conservative[i,] + 1)
+}
+```
+
+```{r}
+cumulative_super_forecast_df <- cumulative_super_forecast  |> 
+  mutate(sim_id = row_number()) |> 
+  dplyr::select(sim_id, everything()) |> 
+  pivot_longer(
+    cols = -sim_id,
+    names_to = c("risk_profile", "year"),
+    names_pattern = "(.*)\\.(\\d+)"
+    ) |> 
+  mutate(
+    year = 2025 + as.integer(year)
+  ) |> 
+  dplyr::select(sim_id, risk_profile, year, cumulative_return = value)
+```
+
+```{r}
+  cumulative_super_forecast_df |> 
+  group_by(risk_profile, sim_id) |> 
+  arrange(risk_profile, sim_id, year) |> 
+  mutate(
+    period_return = cumulative_return / lag(cumulative_return),
+    period_return = ifelse(is.na(period_return), 1, period_return),
+    expense = 50000,
+    balance = accumulate2(
+      period_return, expense,
+      ~ .x * .y - ..3,
+      .init = 1500000
+    )[-1]
+  ) |> 
+  filter(risk_profile == "balanced") |> 
+  filter(balance < 0) |> 
+  ungroup() |> 
+  distinct(sim_id)
+
+```
+
+
+```{r}
+#write.csv(cumulative_super_forecast, file = here("Data/Processed Data/cumulative_super_forecast.csv"))
+#write.csv(super_forecast, file = here("Data/Processed Data/super_forecast.csv"))
+
+dbWriteTable(config$con, 
+             Id(schema = "processed", table = "simulation_path"), 
+             cumulative_super_forecast_df, 
+             overwrite = TRUE
+             )
+
+dbWriteTable(config$con, 
+             Id(schema = "processed", table = "super_simulations"), 
+             super_forecast |> mutate(sim_id = row_number()) |> dplyr::select(sim_id, everything()), 
+             overwrite = TRUE
+             )
+```
+
+```{r}
+knitr::purl("invest_modelling.Rmd", here::here("Scripts/invest_modelling.R"))
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+

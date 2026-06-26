@@ -2,6 +2,13 @@
 .Rhistory
 .Rapp.history
 
+# R Markdown files
+.Rmd
+
+# Power BI Files
+.pbix
+.pbit
+
 # Session Data files
 .RData
 .RDataTmp
