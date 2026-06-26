@@ -25,7 +25,7 @@ The goal is to answer questions like:
 ## ⚠️ Disclaimer:
 This project is not financial advice. Does not account for taxes, fees, or distinct policy changes.
 
-File sizes were too big to commit to this repository. simulations.csv, retirement_simulations.csv, and the .pbix file were too large. Hence, the data was trimmed, and the Power BI report file was removed.
+File sizes were too big to commit to this repository. The pbix file used to build the report imports the data from a SQL Server Database, which has millions of rows.
 
 ---
 
@@ -68,13 +68,11 @@ At a high-level, the Power BI report:
 
 │   ├── Raw Data/             # Raw data from sources
 
-│   └── Processed Data/         # Transformed and output data
+├── Scripts/                 # Scripts used for demographic and economic modelling
 
-├── Scripts/                 # Scripts used for the project
+├── Queries/                 # Queries used for the data modelling
 
 ├── .gitignore
-
-├── Retirement Report.pbix                 # Not in repository due to file size.
 
 └── README.md
 
