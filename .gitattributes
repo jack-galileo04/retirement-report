@@ -1,6 +1,10 @@
 # Auto detect text files and perform LF normalization
 * text=auto
 
-# Auto detect scripts/queries
+# Auto detect queries
 *.sql linguist-detectable=true
+*.sql linguist-language=SQL
+
+# Auto detect scripts
 *.R linguist-detectable=true
+*.R linguist-language=R
