@@ -3,11 +3,11 @@
 .Rapp.history
 
 # R Markdown files
-.Rmd
+*.Rmd
 
 # Power BI Files
-.pbix
-.pbit
+*.pbix
+*.pbit
 
 # Session Data files
 .RData
