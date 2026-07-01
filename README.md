@@ -17,8 +17,9 @@ The goal is to answer questions like:
 - How much do I need to retire comfortably?
 - How much can I withdraw/draw down each year?
 - What changes make the biggest impact?
-- What is the chance my savings deplete?
+- What is the chance my savings will be depleted?
 - What will my terminal estate look like?
+- How long will my retirement likely be?
 
 ---
 
@@ -33,7 +34,7 @@ File sizes were too big to commit to this repository. The .pbix file used to bui
 
 At a high-level, the Power BI report:
 1. Takes in financial and demographic inputs (gender, current age, investment portfolio)
-2. Allows the user to personalise their desired terminal estate, expected yearly expenses, and retirement age
+2. Allows the user to personalise their desired terminal estate, expected yearly expenses, retirement age, and risk preferences.
 3. Applies growth assumptions (investment returns, CPI, and mortality rates)
 4. Simulates accumulations
 5. Outputs projected retirement savings and insights: [Retirement Report](https://app.powerbi.com/view?r=eyJrIjoiNDgyMGQ5YzEtNWI4Mi00ZDhlLThiMGMtOWJkMzZlYTc3NzAyIiwidCI6IjNhYTEyYWIxLWQyNGEtNGI0Yy04YjI0LTk5ZWI3ODE2YzJjZSJ9&pageName=fd5649d8ab8b02bfb164)
